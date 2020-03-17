@@ -1,0 +1,83 @@
+---
+title: "Final_Project_Part1"
+author: "Zhuofei Xie"
+date: "10/13/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(mdsr)
+dc_data <- read.csv(file = "dc-wikia-data.csv", header = TRUE)
+marvel_data <- read.csv(file = "marvel-wikia-data.csv", header = TRUE)
+```
+
+The article I choose for final project part 1 is: http://fivethirtyeight.com/features/women-in-comic-books/ 
+
+The first graph is "New Comic Book Characters Introduced Per Year". 
+In order to creat a graph with both marvel data and DC data, I use full_joint function to join to data sets together. I realzie the the year column for marvel and DC data sets were different. I change one of them in order to let the names are corresponding. I also only keep the distinct name appear each year. Then the graph has been generated indicates both companies created more and more characters from 1940 to 2010, except 1940 to 1950. Both companies created less characters during that time. 
+```{r warning=FALSE}
+head(marvel_data)
+names(marvel_data)[13] <- "YEAR"
+add_company_dc <- dc_data %>%  mutate(company = "DC")
+add_company_marvel <- marvel_data %>% mutate(company = "Marvel")
+join_dc_marvel <- full_join(add_company_dc, add_company_marvel)
+head(join_dc_marvel)
+after_selection <- join_dc_marvel %>% 
+  group_by(YEAR, company) %>% 
+  summarise(
+    characters =  n_distinct(name), 
+  ) 
+head(after_selection)
+```
+
+```{r}
+company.labs<- c("DC, New Earth continuity", "Marvel, Earth-616 continuity")
+names(company.labs) <- c("DC", "Marvel")
+
+ggplot(data = after_selection, mapping = aes(x = YEAR, fill = company)) + geom_bar(aes(y = characters), stat = "identity", width = 0.85) +ggtitle("New Comic Book Characters Introduced Per Year") + theme_minimal()  + facet_grid(~company, labeller = labeller(company = company.labs)) + scale_fill_manual( values = c( "dodgerblue3", "#FC0505" ) ) + ylim(0,600) + xlim(1940,2010)
+
+```
+
+
+The next graph I plot is about the "Comic Arn't Gaining Many Female Characters". In order to make this graph, I only select the time after 1980. Then using the group_by and summarise functions to get the percentage of the female characters. As can be seen from the graph. The percentage of female characters were less than 50% from 1980 to 2010. The highest ratio was around 45% at 2002. Therefore, this result indicates the female characters were less than male characters.   
+```{r}
+new_female_characters <- join_dc_marvel %>% 
+  filter(YEAR >= 1980) %>% 
+  group_by(YEAR, company) %>% 
+  summarise(
+    number_characters = n_distinct(name),
+    number_female_characters = sum(ifelse(SEX == "Female Characters",1, 0)), 
+    female_characters_ratio = (number_female_characters/number_characters) * 100, 
+  ) %>% 
+  filter(female_characters_ratio>0)
+head(new_female_characters)
+```
+
+```{r}
+ggplot(data = new_female_characters, mapping = aes(x = YEAR, y = female_characters_ratio, color = company)) + geom_line(lwd = 1.1) + ylim(0,50) + ggtitle("Comics Aren't Gaining Many Female Characters", subtitle = "Percentage of new characters who are female") + theme_minimal() + scale_color_manual(values=c("dodgerblue3", "#FC0505")) + geom_text( aes(fontface = 2), x = 2001, y = 45, label = "DC", color = "dodgerblue3") + geom_text( aes(fontface = 2), x = 2002, y = 24, label = "Marvel", color = "#FC0505")
+```
+
+
+The last graph I created is "Comics Are Gaining A Few LGBT Characters". In order to generate this graph, I also use filter select, group_by functions to generate the suitable data sets. The result graph indicates also from 1940 to 2010, the number of LGBT characters increased, however, the number of those characters were still minirities comparing with the other normal characters. 
+```{r}
+with_LGBT <- join_dc_marvel %>% 
+  select(YEAR, GSM) %>% 
+  filter(GSM == "Bisexual Characters" | GSM == "Homosexual Characters" | GSM == "Transgender Characters" | GSM == "Pansexual Characters" | GSM == "Transvestites") %>% 
+  mutate(n = 1) %>% 
+  arrange(desc(YEAR))
+
+after_count <- with_LGBT %>% 
+  group_by(YEAR) %>% 
+  summarise(
+    n = sum(n), 
+  ) 
+head(after_count)
+
+ggplot(data = after_count, mapping = aes(x = YEAR, y = n)) + geom_bar(stat = "identity", fill = "#6AA121") + ylim(0,15) + ggtitle("Comics Are Gaining A Few LGBT Characters" , subtitle = "LGBT characters introduced into DC and Marvel comics per year, including retroactive continuity changes") +  theme_minimal()
+```
+
+
+
