@@ -1,0 +1,137 @@
+---
+title: "Homework6"
+author: "Zhuofei Xie"
+date: "10/12/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(Lahman)
+library(dplyr)
+library(tidyverse)
+manny <- filter(Batting, playerID == "ramirma02")
+```
+
+**1. How many rows are in the data frame manny?** 
+
+```{r}
+nrow(manny)
+
+```
+
+There are `21` rows in rhe data frame manny. 
+
+**2. Display Manny Ramirez’s records (as done above), grouped by teams he played for.**
+```{r}
+manny %>% 
+  group_by(teamID) %>% 
+  summarise(
+    span = paste(min(yearID), max(yearID), sep = "-"), 
+    numYear = n_distinct(yearID), 
+    numTeams = n_distinct(teamID), 
+    BA = sum(H) / sum(AB), 
+    tH = sum(H), 
+    tHR = sum(HR), 
+    tRBI = sum(RBI), 
+  )
+```
+
+
+**3. In the above code chunk, if inner_join() is used in place of left_join(), what will be the number of rows of the resulting table?**
+
+
+```{r}
+Master %>% filter(nameLast == "Ramirez", nameFirst == "Manny")
+mannyBySeason <- Batting %>% 
+  filter(playerID == "ramirma02") %>% 
+  inner_join(Master, c ("playerID" = "playerID")) %>% 
+  group_by(yearID) %>% 
+  summarise(
+    Age = max(yearID - birthYear), 
+    numTeams = n_distinct(teamID), 
+    BA = sum(H)/sum(AB), 
+    tH = sum(H), 
+    tHR = sum(HR), 
+    tRBI = sum(RBI), 
+    OBP = sum(H + BB + HBP) / sum(AB + BB + SF + HBP),
+    SLG = sum(H + X2B + 2*X3B + 3*HR) / sum(AB)
+  ) %>% 
+  mutate(OPS   = OBP + SLG) %>%
+  arrange(desc(OPS)) 
+
+mannyAllstar <- AllstarFull %>% filter(playerID == "ramirma02")
+
+mannyBySeason %>% 
+  inner_join(mannyAllstar, by = c("yearID" = "yearID")) %>%
+  select(yearID, Age, OPS, GP, startingPos)  
+
+```
+
+If we change the `left_joint` to the `inner_joint`, the result of two tables will be different. The reason is inner_joint needs to find the condition that match for both data_frames. There are `19` rows in the table if we use the `left_joint`. However, there are `12` rows in the table if we use the `inner_joint`.  
+
+```{r eval=FALSE, echo=FALSE}
+mannyAllstar <- AllstarFull %>% filter(playerID == "ramirma02")
+
+mannyBySeason %>% 
+  left_join(mannyAllstar, by = c("yearID" = "yearID")) %>%
+  select(yearID, Age, OPS, GP, startingPos) 
+```
+
+**4. Confirm that Barry Bonds has the record for most home runs (762) hit in a career. For this, list top 20 players’ names with the most home runs, and confirm that Manny is in the top 20. Note that you will need to join the Batting and Master tables together to display the players’ name instead of the player ID.**
+```{r}
+HighestHitting <- Batting %>% 
+  select(playerID, HR) %>% 
+  inner_join(Master, c( "playerID" = "playerID")) %>% 
+  select(playerID, nameLast, nameFirst, HR) 
+
+top20 <- HighestHitting %>% 
+  group_by(nameFirst,nameLast, playerID) %>% 
+  summarise(
+    tHR = sum(HR), 
+  ) %>% 
+  arrange(desc(tHR)) %>% 
+  head(20)
+
+top20[c("nameFirst", "nameLast", "tHR")]
+```
+
+
+**5. Name every pitcher in baseball history who has accumulated at least 300 wins (W) and at least 3,000 strikeouts (SO). Use Pitching table.**
+```{r}
+PitcherHistory <- Pitching %>% 
+  inner_join(Master, c = ("playerID" = "playerID")) %>% 
+  select(nameFirst, nameLast, W, SO)
+
+afterSelection <- PitcherHistory %>% 
+  group_by(nameFirst, nameLast) %>% 
+  summarise(
+    totalWin = sum(W), 
+    totalStrikeouts = sum(SO), 
+  ) %>% 
+  filter(totalWin >= 300 & totalStrikeouts >= 3000) %>% 
+  arrange(desc(totalWin), desc(totalStrikeouts))
+
+afterSelection
+```
+
+**6. Display a table with 10 most recent World Series MVP awardees. Include their names and ages. The following code chunk is a good start.**
+```{r}
+top <- AwardsPlayers %>% filter(awardID == "World Series MVP") %>% 
+  inner_join(Master, c("playerID" = "playerID")) %>% 
+  select(awardID,birthYear, yearID, nameFirst,nameLast) 
+
+top10 <- top %>% 
+  group_by(nameFirst, nameLast) %>% 
+  summarise(
+    yearID = max(yearID), 
+    awardID = "World Series MVP", 
+    ages = max(yearID - birthYear), 
+  ) %>% 
+  arrange(desc(yearID)) %>% 
+  head(10)
+
+top10
+
+```
+

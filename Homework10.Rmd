@@ -1,0 +1,127 @@
+---
+title: "Homework10"
+author: "Zhuofei Xie"
+date: "11/22/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(broom)
+library(dplyr)
+library(tidyr)
+library(modelr)
+```
+
+```{r}
+mod <- lm(mpg ~ ., data = mtcars)
+prediction <- augment(mod, mtcars) %>% 
+  select(.rownames, mpg, .fitted) 
+head(prediction) 
+```
+
+**1. Compute the sum of squared errors from the fitted regression model. **
+```{r}
+SSE <- 0
+terminal <- nrow(prediction)
+for (i in 1:terminal) {
+  SSE = SSE + (prediction[i,2] - prediction[i,3])^2
+}
+SSE
+```
+
+**2. With suitable assumptions on the population, which coefficients are significantly different from zero? [Hint: the answer is either all or nothing.]**
+```{r}
+summary(mod)
+```
+All coefficients are siginificantly different from zero. 
+
+
+```{r}
+quantile(mtcars$mpg)
+mtcars %>% 
+  group_by(cyl) %>% 
+  summarise(
+    q = list(quantile(mpg))) %>% 
+  unnest()
+```
+
+```{r}
+probs <- c(0.01, 0.25, 0.5, 0.75, 0.99)
+mtcars %>% 
+  group_by(cyl) %>% 
+  summarise(
+    p = list(probs), 
+    q = list(quantile(mpg,probs))
+  ) %>% 
+  unnest()
+```
+
+```{r}
+set.seed(1) 
+folds <- crossv_kfold(mtcars, k = 5)
+folds
+```
+
+**3. What are the row numbers in the first partition of the “training” data? Notice that the first train object references all rows except 5, 9, 17, 20, 27, 28, 29.**
+```{r}
+library(modelr)
+set.seed(1)
+folds <- crossv_kfold(mtcars, k = 5)
+folds
+folds$train[[1]]
+folds$test[[1]]
+```
+The row numbers in the first partition of the "training" data is 1,2,3,5,6,8,9,10,11,13,14,15,16,17,18,19,20,22,23,24,25,26,28,30,32
+
+
+**4. Confirm that the SSE from cross validation is much larger than the SSE from Exercise 1.**
+```{r}
+library(purrr)
+folds <- folds %>% mutate(model = map(train, ~ lm(mpg ~ ., data = .)))
+folds %>% mutate(predicted = map2(model, test, ~ augment(.x, newdata = .y)))
+
+library(tidyr)
+cv.pred <- folds %>% mutate(predicted = map2(model, test, ~ augment(.x, newdata = .y))) %>% unnest(predicted)
+head(cv.pred)
+
+cv.pred %>% summarise(SSE =  sum((mpg - .fitted)^2))
+```
+The result we get from exercise 1 is around 147. Comparing with around 685 fot this question. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

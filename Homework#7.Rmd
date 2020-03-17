@@ -1,0 +1,135 @@
+---
+title: "Homework#7"
+author: "Zhuofei Xie"
+date: "10/16/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set
+library(tidyr)
+library(dplyr)
+
+```
+
+
+**1. The dataset preg is not tidy. Why is that?**
+```{r}
+preg <- read.csv("preg.csv", stringsAsFactors = FALSE)
+preg
+preg2 <- preg %>% 
+  gather(key = treatment, value = n, treatmenta:treatmentb) %>% 
+  mutate(treatment = sub("treatment", "", treatment)) %>% 
+  arrange(name, treatment)
+preg2
+
+```
+There are 3 requirements for a tidy dataset: 
+  1. Each `variable` is saved in its own `column`.  
+  2. Each `observation` is saved in its own `row`.   
+  3. Each "type" of observation stored in a `single table`. 
+The benefits of Tidy data: 
+  1. Easy to access variables 
+  2. Automatically preserves observations 
+However in the original dataset `preg`, variable `treatment` forms two columns. Also the observation doesn't save in its own row. 
+After we gathering the data, the tidy data is more easy to access the variable and it automaticaly preserves obervations. 
+
+**2. A common type of messy dataset is tabular data designed for presentation, where variables form both the rows and columns, and column headers are values, not variable names. The data contained in pew.csv explores the relationship between income and religion in the US. It comes from a report produced by the Pew Research Center, an American think-tank that collects data on attitudes to topics ranging from religion to the internet, and produces many reports that contain datasets in this format. This dataset should have three variables: religion, income and frequency. Use gather() to make this data tidy. [ Hint: Use the following line to read the data. ]**
+```{r}
+pew <- tbl_df(read.csv("pew.csv", stringsAsFactors = FALSE, check.names = FALSE))
+pew
+pew2 <- pew %>% 
+  gather(key = Income, value = frequency, "<$10k":"Don't know/refused") %>% 
+  mutate(Income = sub("Don't know/refused", "N/A",Income )) %>% 
+  arrange(religion)
+pew2
+```
+
+```{r echo=FALSE, include=FALSE}
+table1
+table2
+table2_tidy <- table2 %>% 
+  spread(key = type, value = count)
+table2_tidy
+table3
+table3_tidy <- table3 %>% 
+  separate(rate, into = c("cases", "population"), sep = "/",convert = TRUE)
+table3_tidy
+table4a
+tidy4a <- table4a %>% 
+  gather(key = "year", value = "cases", `1999`:`2000`)
+tidy4a
+table5 
+table5_tidy <- table5 %>% 
+  unite(year, century, year, sep = "") %>% 
+  separate(rate, into = c("cases", "population"), sep = "/")
+table5_tidy
+```
+
+
+**3. Make table4b tidy, by gathering the latter two columns, where key is “year”, value is “population”. Set the name of the resulting data frame tidy4b.**
+```{r}
+table4b
+tidy4b <- table4b %>% 
+  gather(key = "year", value = "population", `1999`:`2000`)
+tidy4b
+```
+
+
+**4. Join the two tidy tables tidy4a and tidy4b, using a two-table verb in dplyr. The resulting data frame must look exactly the same as table1.**
+```{r}
+table1
+tidy4a %>% 
+  left_join(tidy4b, by = c("year", "country")) %>% 
+  arrange(country)
+```
+
+
+**5. Consider the following data frame. Spread it to a wide table so that return in each year is a column.**
+```{r}
+stocks <- tibble(
+  year = c(  2015, 2015, 2016, 2016), 
+  half = c(     1,    2,    1,    2),
+  return = c(1.88, 0.59, 0.92, 0.17), 
+)
+stocks
+stocks_tidy <- stocks %>% 
+  spread(key = year, value = return)
+stocks_tidy
+```
+
+**6. Tidy the simple tibble below. Do you need to spread or gather it? What are the variables?**
+```{r}
+pregnant <- tribble(
+  ~pregnant, ~male, ~female, 
+  "yes",        NA,      10, 
+  "no",         20,      12
+)
+pregnant
+pregnant_tidy <- pregnant %>% 
+  gather(key = "sex", value = "cases", male:female)
+pregnant_tidy
+```
+We need to use the `gather` variable. In order to make a column named `sex`, and the other column called `cases`. The variables are `pregnat`, `sex`, and `cases`. 
+
+**7. In the intermediate result above, notice that the new variable new has a not very meaningful name, and its values are not numbers but characters. Finish transforming table5 into the tidy form (the same as table1).**
+```{r}
+table5 
+table5_tidy <- table5 %>% 
+  unite(new, century, year, sep = "") %>% 
+  mutate(new = as.integer(new)) %>% 
+  rename(year = new) %>% 
+  separate(rate, into = c("cases", "population"), sep = "/")
+table5_tidy
+```
+
+
+
+
+
+
+
+
+
+
+

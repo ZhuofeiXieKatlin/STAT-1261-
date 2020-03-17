@@ -1,0 +1,158 @@
+---
+title: "Homework9"
+author: "Zhuofei Xie"
+date: "11/8/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(broom)
+library(tidyr)
+library(dplyr)
+library(mdsr)
+library(OpenMx)
+library(ggplot2)
+```
+
+```{r}
+data(twinData)
+twinData <- as_tibble(twinData)
+twinData
+help("twinData")
+```
+
+**1. In terms of the relation between two variables, ht1 and ht2, what does high similarity of heights imply?** 
+```{r}
+x = twinData %>%  select(ht1)
+y = twinData %>%  select(ht2)
+cor(x,y, use = "complete.obs" )
+```
+We can use the cor( ) function to produce correlations and the cov( ) function to produces covariances.
+The sign of the correlation function return means whether two variable has the positive relationship or the negatice relationship. The higher the absolute value means the higher relationship between two variable. 
+Specifies the handling of missing data. Options are `all.obs` (assumes no missing data - missing data will produce an error), `complete.obs` (listwise deletion), and `pairwise.complete.obs` (pairwise deletion)
+The corelation # we get from this question is `0.6193442` means their is a high similarity between two variables. 
+
+**2. Using ggplot2, create scatter plots to visually investigate the relation between ht1 and ht2. The scatter plot gives some impression on the answer of the question, “yes”. Why?**
+```{r}
+ggplot(data = twinData, aes(x = ht1, y = ht2)) + geom_point()
+```
+As can be see from the data, there is a positive relationship between ht1 and ht2. The trend is really clearly to observe from those points. 
+
+
+**3. But, will the answer be the same if we use more information? Consider two more variables cohort, zygosity. Add more layers or use facet to include the information contained in these two variables.**
+```{r}
+ggplot(data = twinData, aes(x = ht1, y = ht2)) + geom_point() + facet_grid(cohort ~ zygosity)
+```
+
+
+**4. Inspect the scatter plot(s) you created. What do you see?** 
+As can be seen from the data set. MZFF for older, MZMM for older, MZFF for younger, MZMM for younger have an obvious positive relationship between ht1 and ht2. However, as for the other patterns, the corelation is much weaker. 
+
+```{r}
+twinData %>% 
+  with(cor.test(~ht1 + ht2, alternative = "greater"))
+```
+
+
+
+**5. Sort the result of above computation from the largest estimate of correlation coefficient to the smallest.**
+```{r}
+cor_result <- cor.test(~ ht1 + ht2, data = twinData)
+tidy_cor_result <- tidy(cor_result)
+
+twin_data_coe <- twinData %>% 
+  group_by(cohort, zygosity) %>% 
+    do(tidy(cor.test(~ht1 + ht2, alternative = "greater", data = .))) %>% 
+  arrange(desc(conf.low))
+twin_data_coe
+```
+
+**6. Create a new variable to indicate whether the correlation coefficient between ht1 and ht2 in the particular subgroup is greater 0.5, with 95 percent confidence (i.e. the lower bound of the 95% confidence interval is less greater than 0.5). Save the resulting data frame by the name sig_twin_cor.**
+```{r}
+twin_data_coe <- twin_data_coe %>% 
+  mutate(high_ht1_ht2_relation = ifelse(conf.low>=0.5, "yes", "no"))
+twin_data_coe
+```
+
+
+**7. List only the combinations of cohort and zygosity where the twins’ heights are significantly similar. Here the similarity is defined by the test result, evaluated in #6.**
+```{r}
+high_similarity <- twin_data_coe %>% 
+  filter(high_ht1_ht2_relation == "yes")
+high_similarity
+```
+
+
+**8. Repeat exercise #3. This time, use the variables cohort, zygosity to facet, and use different colors to indicate the subgroups for which the heights are significantly similar. Comment on your finding.** 
+```{r}
+tb_data <- twin_data_coe %>% left_join(twinData, by =  c("cohort", "zygosity"))
+tb_data
+ggplot(data = tb_data, aes(x = ht1, y = ht2, col= high_ht1_ht2_relation)) + geom_point() + facet_grid(cohort ~ zygosity)
+```
+```{r}
+twinData
+```
+
+
+**9. Recreate the following graphic. This involves transforming twinData into a narrow form using gather(). You might want to take a look at Lecture 5 slides for boxplots.** 
+```{r}
+twinData_gather <- twinData %>% 
+  gather("twin_order", "height",ht1:ht2 )
+box_plot <- ggplot(data = twinData_gather, aes(x = twin_order, y = height)) + geom_boxplot() + facet_grid(cohort~ zygosity)
+box_plot
+```
+
+
+**10. Inspect the data graphic. Is there any need to adjust the hypothesis (posed in Question #2)? We can use the paired t-test to test whether the first-born’s height is significantly different from the second-born for each subgroup at significance level 5%.**
+
+```{r} 
+twin_t <- 
+  twinData %>% 
+  select(cohort,zygosity,ht1,ht2) %>% 
+  group_by(cohort,zygosity) %>%
+  do(tidy(t.test(.$ht1, .$ht2, paired = TRUE))) %>% 
+  arrange(desc(p.value))
+twin_t
+```
+According to the p.value it indicates older DZFF, older MZFF, older DZMM, younger DZFF, older DZOS, and younger DZOS reject the null hypothesis which means the height of the first cildren is not really correspond with the height of the second children. 
+
+**11. Recreate the above graphic with different colors indicating the results of t-tests (based on p-value).**
+```{r}
+twin_t_result <- twin_t %>% 
+  inner_join(twinData, by = c("cohort", "zygosity")) %>% 
+  mutate(reject = ifelse(p.value<=0.05,"TRUE","FALSE"))
+
+twin_t_result_gather <-twin_t_result %>% 
+  gather("twin_order", "height",ht1:ht2) 
+
+ggplot(data = twin_t_result_gather, aes(x = twin_order, y = height, col = p.value)) + geom_boxplot() + facet_grid(cohort~ zygosity)
+
+ggplot(data = twin_t_result_gather, aes(x = twin_order, y = height, col = reject)) + geom_boxplot() + facet_grid(cohort~ zygosity)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

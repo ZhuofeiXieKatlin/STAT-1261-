@@ -1,0 +1,161 @@
+---
+title: 'STAT 1261/2260: Principles of Data Science'
+subtitle: 'Homework 4 (Zhuofei Xie)'
+output:
+  word_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.width=6, fig.height=4, out.width = "70%", fig.align = "center") 
+```
+
+```{r, message = FALSE,warning=FALSE}
+library(mdsr)
+library(babynames)
+BabynamesDist <- make_babynames_dist()
+head(BabynamesDist, 2)
+```
+
+**Instruction: Please knit your .rmd to a word file.**
+
+**1. Inspect `babynames` packages. Which data frames are included? [Hint: Try `help(package="babynames")`].**
+
+```{r echo = TRUE, include=TRUE}
+help(package = "babynames" )
+class(applicants)
+class(babynames)
+class(births)
+class(lifetables)
+```
+
+There are four data frames inside the `babynames` packages. These are `applicants`, `babynames`, `births`, and `lifetables`. All of them are `tibble`. The type of data frame is `tibble`. `Tibble` or `tbl_df`, is opinionated data frames that make working with big data a little easier. It is a mordern remainning of the data.frame, keeping what has proven to be effective, and throwing out what is not. Tibbles are data.frames that are lazy and surly: they do less (i.e. they don't change variable nammes or types, and don't do partial maching) and complain more (eg. when variable does not exist). The tibble package is included in the package tidyverse. 
+
+**2. The `BabynamesDist` data frame created above is obtained by joining `lifetables` and `babynames` tables (data frames) and also by manipulating their variables. Count the number of variables in `BabynamesDist` and `babynames`. 
+Count the number of cases in `BabynamesDist` and `babynames` and check that not all cases in the original data are included in `BabynamesDist`.**  
+
+```{r echo = FALSE, include=TRUE}
+BabynamesDist <- make_babynames_dist()
+dim(babynames)
+dim(lifetables)
+dim(BabynamesDist)
+```
+
+I use `dim()` function to check how many cases and variables are inside the data frames. There are `1924665` cases and `5` variables in `babynames` data frame. There are `2880` cases and `9`variables in `lifetables` data frame. There are `1639722` cases and `9` variables in `BabynameDist` data frame. As can be seen, the cases in `babyname` data frame are more then `BabynamesDist`. The number of varaibles in `babyname` is less then `BabynameDist`, with 5 and 9 respectively.  It means after making `BabynamesDist`, the data what remain in both data frames have been merged. All the cases in the original data are included in `BabynamesDist`. There are `9` variables inside the `BabynamesDist`.The variables in `BabynamesDist` covers all variables in `babynames`. 
+
+**3. Inspect Figure 3.21. Imagine a data set used there. What are the cases? What are the variables? Which visual cues are used to map which variables? See if the choice of coordinate system and scale are appropriate. Identify all labels and guides (or legends) used in the graphic to provide the context.**
+
+* Cases: 
+    * Newborn babies who have the same name `Joseph` and also are `boys`
+* Variables: 
+    * x-axis: year `numerical` 
+      * visual cues: color and hue, position 
+    * y-axis: number of newborns `numerical`
+      * visual cues: length, direction, color and hue
+* coordinate system: 
+    * cartesian coordinate: (x,y)
+* scales: 
+    * x-axis: 10 years
+    * y-axis: 10k newborns 
+* labs: 
+    * title: `Age Distribution of America Boys Named Joseph By year of birth`
+    * bar_graph: `Number of Josephs born each year estimated to be alive on Jan.1.2014`
+    * line_graph: `Number of Josephs born each year`
+    * Special_point: `The median living Joseph is 37 years old`
+
+The coordinate systems and scale are approciate. 
+
+**4. Consider using `ifelse` to dichotomize a numeric variable. For this task, load the famous Boston housing data: `MASS::Boston`. Type `?Boston` to read the data description. What is the mean of variable `medv`? [Hint: `mean(MASS::Boston$medv)`].**
+
+```{r echo=TRUE, include=FALSE}
+library(Hmisc)
+help(Boston)
+MASS::Boston
+class(MASS::Boston)
+mean(MASS::Boston$medv)
+```
+
+* Description of Boston data set
+   * The Boston data frames has 506 row and 14 columns. 
+   * `MASS::Boston` is a `data.frame`
+* The mean of variable `medv` is `22.53281` by implementing `mean(MASS::Boston$medv)`
+
+**5. Using the `Boston` data set, write a code to create a data object named `Binary_medv` whose value is `"rich"` if the value of `medv` is greater than 25, `"not so"` if not. Use the function `ifelse()`.**
+
+```{r include=TRUE}
+Binary_medv <- ifelse(MASS::Boston$medv>25, "rich", "not so")
+Binary_medv
+```
+
+`ifelse` method means 
+if(medv > 25){
+      rich
+}else{
+      not so
+}
+
+**6. The `MLB_teams` data set in the `mdsr` package contains information about Major League Baseball teams in the past four seasons. There are several quantitative and a few categorical variables present. See how many variables you can illustrate on a single plot in R. The current record is 7. [Note: this is not good graphical practice, it is merely an exercise to help you understand how to use visual cues and aesthetics!]**
+
+```{r}
+graph <- ggplot(data = MLB_teams) + geom_bar(mapping = aes(x = teamID, y = attendance), stat = "identity")
+graph <- graph + facet_wrap(~lgID)
+graph <- graph + geom_smooth(aes(x = teamID, y = payroll/20), stat = "identity")
+graph <- graph + coord_flip()
+graph
+```
+
+I use four variables inside this graph, which are `payroll`, `teamID`, `attendence`, and `lgID`. 
+
+
+**7. Use the `MLB_teams` data in the `mdsr` package to create an informative data graphic that illustrates the relationship between winning percentage `WPct` and payroll `payroll` in context. (Hint: Create a scatterplot and superimpose regression or lowess line. Transform the data if necessary.)**
+
+```{r include=TRUE, warning=FALSE}
+plot <- ggplot(data = MLB_teams, aes(x = payroll, y = WPct)) + geom_point() + geom_smooth(method = "lm", se = FALSE)
+plot
+```
+
+As can be seen from the linear regression graph. The higher the payroll, the higher the winning perentage. 
+
+**8. Recreate Figure 3.21 by collecting all the related code in Lab 4. Show both your code and the plot.**
+
+```{r}
+library(Hmisc)
+BabynamesDist <- make_babynames_dist()
+Joesphs <- filter(BabynamesDist, name == "Joseph", sex == "M")
+plot <- ggplot(data = Joesphs, aes(x = year))
+plot <- plot + geom_bar(stat = "identity", aes(y = count_thousands * alive_prob),
+            fill = "#b2d7e9", colour = "white")
+plot <- plot + geom_line(aes(y = count_thousands), size = 2)
+plot <- plot + ylab("Number of People (thousands)") + xlab(NULL)
+median_point <- with(data = Joesphs, wtd.quantile(year, est_alive_today, probs = 0.5))
+plot <- plot + geom_bar(stat = "identity", aes(y = ifelse(year == median_point, est_alive_today/1000, 0)),colour = "white", fill = "#008fd5")
+plot <- plot + labs(title = "Age Distribution of American Boys Named Joseph") + geom_text(x = 1935, y = 30, label = "Number of Josephs \n born each year") + geom_text(x = 1915, y = l13, label = "Number of Josephs \n born each year \n estimated to be alive \n on 1/1/2014", colour = "#b2d7e9")
+plot <- plot + geom_text(x = 2003, y= 32, label = "The median \n living Joseph \n is 37 years old",
+            colour = "darkgray")
+plot <- plot + geom_curve(x = 1998, xend = 1974, y = 32, yend = 24, arrow = arrow(length = unit(0.3, "cm")), curvature = 0.6) + ylim(0,42)
+plot
+```
+
+
+
+**9. Recreate the name plot for Josephine and add necessary context just as the one for Joseph.  Modify the code chunk about adding context in the lab instruction according to the info about Josephine. Make sure you adjust the positions of the text labels so that they are in the appropriate places in the plot.**
+
+```{r}
+library(Hmisc)
+library(babynames)
+BabynamesDist <- make_babynames_dist()
+Josephine_name <- filter(BabynamesDist, name == "Josephine", sex == "F")
+Josephine_plot <- ggplot(Josephine_name, aes(x = year))
+Josephine_plot <- Josephine_plot + geom_bar(aes(y = count_thousands * alive_prob), fill = "#b2d7e9", colour = "white", stat = "identity")
+Josephine_plot <- Josephine_plot + ylab("Number of People (in thousands)") + labs(title = "Age Distribution of American Girls Named Josephine" )
+Josephine_plot <- Josephine_plot + geom_line(aes(y = count_thousands), size = 2)
+median_value <- with(data = Josephine_name, wtd.quantile(year, est_alive_today, probs = 0.5))
+Josephine_plot <- Josephine_plot + geom_bar(aes(y=ifelse(year == median_value, est_alive_today/1000, 0)), colour = "white", fill = "#008fd5", stat = "identity")
+Josephine_plot <- Josephine_plot + geom_text(x = 1990, y = 6.0, label="Number of Josephine \n born each year") + geom_text(x = 1922, y = 4.0, label = "Number of Josephine \n born each year \n estimated to be alive \n on 1/1/2014", colour = "#b2d7e9")
+Josephine_plot <- Josephine_plot + geom_curve(x = 1950, xend = 1950, y = 5.0, yend = 2.3, arrow = arrow(length = unit(0.3, "cm")), curvature = 0.0) + geom_text(x = 1950, y = 6.0, label = "The median \n living Josephine \n is 63 years old")
+Josephine_plot
+```
+
+
+
+

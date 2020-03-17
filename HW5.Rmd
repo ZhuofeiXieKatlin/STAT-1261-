@@ -1,0 +1,246 @@
+---
+title: 'STAT 1261/2260: Principles of Data Science'
+subtitle: 'Homework 5'
+output:
+  word_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.width=6, fig.height=6, out.width = "70%", fig.align = "center") 
+library(Hmisc)
+library(mdsr)
+library(babynames)
+library(dplyr)
+library(tidyverse)
+```
+
+```{r echo = FALSE, eval=FALSE}
+BabynamesDist <- make_babynames_dist()
+com_fem <- BabynamesDist %>%
+  filter(sex == "F") %>%
+  group_by(name) %>% 
+  mutate(N=n()) %>% 
+  filter(N>=4) %>% 
+  summarise(
+    est_num_alive = sum(est_alive_today),
+    q1_age = wtd.quantile(age_today, est_alive_today, probs = 0.25),
+    median_age = wtd.quantile(age_today, est_alive_today, probs = 0.5),
+    q3_age = wtd.quantile(age_today, est_alive_today, probs = 0.75)
+  ) %>%
+  arrange(desc(est_num_alive)) %>%
+  head(25)
+com_fem
+w_plot <- ggplot(
+  data = com_fem, 
+  aes(x = reorder(name, -median_age),  y = median_age)) + 
+  xlab(NULL) + 
+  ylab("Age (in years)") +
+  ggtitle("Median ages for females with the 25 most common names")
+w_plot + 
+  geom_linerange(
+    aes(ymin = q1_age, ymax = q3_age),
+    color = "#f3d478", 
+    size = 5, 
+    alpha = 0.8
+    ) + 
+  geom_point(fill = "#ed3324", colour = "white", size = 3, shape = 21) +
+  geom_point(aes(y=53,x=24),fill = "#ed3324", colour = "white", size = 3, shape = 21) +
+  geom_text(aes(y=58,x=24),label="median",cex=3.8)+
+  geom_text(aes(y=27,x=16),label="25th",cex=3.8)+
+  geom_text(aes(y=49,x=16),label="75th percentile",cex=3.8)+
+  geom_point(aes(y=24,x=16),shape=17)+
+  geom_point(aes(y=56,x=16),shape=17)+
+  coord_flip()
+w_plot
+```
+
+1. Re-create the data graphic, "Youngest Male Names" (again, your result will be different from the chart below). You can recycle some of the codes above. In particular, the youngest men names are given by the ascending order or 
+`median_age`. Your chart should be restricted to birth names given to at least 100,000 male Americans since 1900. Use `filter()` to filter names with at least 100,000 `est_num_alive`. Can you make the color of the bars Carolina blue? 
+
+```{r echo=FALSE, eval=FALSE}
+BabynamesDist <- make_babynames_dist()
+head(BabynamesDist,100)
+
+liam <- BabynamesDist %>% 
+  filter(name == "Jayden") %>% 
+  summarise(
+    name = "Jayden",
+    number = sum(est_alive_today), 
+  )
+liam
+
+
+after_sort <- youngest_male_names %>%  
+  arrange(desc(est_num_alive)) 
+
+after_sort_median_age <- after_sort %>% 
+  arrange(median_age) %>% 
+  head(25)
+
+after_sort_median_age
+```
+
+
+```{r}
+BabynamesDist <- make_babynames_dist()
+youngest_male_names <- BabynamesDist %>% 
+  filter(sex == "M") %>% 
+  group_by(name) %>%
+  mutate(N=n()) %>%
+  filter(N >= 4 && year>=1900) %>%
+  summarise(
+    est_num_alive = sum(est_alive_today), 
+    total = sum(n), 
+    q1 = wtd.quantile(age_today,est_alive_today , probs = 0.25), 
+    median_age = wtd.quantile(age_today, est_alive_today, probs = 0.5),
+    q3 =  wtd.quantile(age_today, est_alive_today, probs = 0.75),
+  ) %>% 
+  filter(total>=100000) %>% 
+  arrange(desc(est_num_alive)) %>% 
+  arrange(median_age) %>% 
+  head(25)
+
+youngest_male_names
+
+plot <- ggplot(data = youngest_male_names, aes(x = reorder(name, -median_age), y = median_age)) + ylab("Age (in years)") + ggtitle("Youngest male names")
+plot +
+  geom_linerange(
+    aes(ymin = q1, ymax = q3),
+    color = "#0066cc", 
+    size = 5, 
+    alpha = 0.8) +
+  geom_point(fill = "#ed3324", colour = "white", size = 3, shape = 21) +
+  geom_point(aes(y=26,x=24),fill = "#ed3324", colour = "white", size = 3, shape = 21) +
+  geom_text(aes(y=29,x=24),label="median",cex=3.8)+
+  geom_text(aes(y=9,x=17),label="25th",cex=3.8)+
+  geom_text(aes(y=13,x=17),label="75th percentile",cex=3.8)+
+  geom_point(aes(y=8,x=17),shape=17)+
+  geom_point(aes(y=15,x=17),shape=17)+
+  coord_flip()
+
+```
+
+```{r echo = FALSE, eval=FALSE}
+plot <- ggplot(data = youngest_male_names, aes(x = reorder(name, -median_age), y = median_age)) + ylab("Age (in years)") + ggtitle("Youngest male names")
+plot + 
+  geom_linerange(
+    aes(ymin = q1, ymax = q3),
+    color = "#0066cc", 
+    size = 5, 
+    alpha = 0.8) +
+  coord_flip()
+plot
+```
+
+
+2. Create a new variable with value  $| 0.5 -  boys / total |$, using `mutate()`.  List the top 10 years in which the name "Jackie" was given to M and F babies most equally. (Hint: arrange the variable created above.)
+
+```{r}
+babynames
+Jackie_name <- babynames %>% 
+  filter(name == "Jackie") %>% 
+  group_by(year) %>% 
+  summarise(
+    total = sum(n), 
+    boys = sum(ifelse(sex == "M", n, 0)), 
+    girls = sum(ifelse(sex == "F", n, 0)), 
+  ) 
+Jackie_name <- mutate(Jackie_name, girl_boy_difference = abs(0.5 - boys/total)) 
+top10 <- arrange(Jackie_name,girl_boy_difference)
+top10 <- head(top10, 10)
+top10
+```
+
+
+Use `babynames` data set to answer the following questions. These questions may be challenging. Think carefully about what data transformations are needed to answer each question. In your report, include both code chunks and the result. 
+
+3. Which year had the highest number of births?
+
+```{r}
+highest_birth <- babynames %>% 
+  group_by(year) %>% 
+  summarise(
+    N = n(), 
+    total = sum(n), 
+  ) %>% 
+  arrange(desc(total))
+highest_birth
+```
+
+`1957` has the highest birth rate, which is `4200007`. 
+
+4. In a single pipeline, compute the earliest and latest year that each name appears. 
+
+```{r}
+name_appear <- babynames %>% 
+  group_by(name) %>% 
+  summarise(
+    first_year = min(year), 
+    last_year = max(year), 
+  )
+name_appear
+```
+
+
+ 
+5. Among popular names (let's say at least 1% of the births in a given year), which name is the *youngest* -- meaning that its first appearance as a popular name is the most recent? 
+
+```{r}
+youngest_name <- babynames %>% 
+  group_by(name) %>% 
+  filter(prop >=0.01) %>% 
+  summarise(
+    year = max(year), 
+  ) %>% 
+  arrange(desc(year)) 
+youngest_name <- head(youngest_name,1)
+youngest_name
+```
+
+
+6. It seems like there is more diversity of names now than in the past. How have the number of names used changed over time? Has it been the same for boys and girls? 
+
+```{r}
+name_changed <- babynames %>% 
+  group_by(year) %>% 
+  summarise(
+    used_name_for_girls = sum(ifelse(sex == "F", 1,0)), 
+    used_name_for_boys = sum(ifelse(sex == "M",1,0)), 
+  )
+name_changed
+```
+
+From 1880 to 2017. The used names for boys and girl all increasing. Comparing with 942 for girls, 1058 for boys in 1880, and 18309 for girls, and 14160 for boys in 2017 respectively. 
+
+7. Find the most popular names of the 1990s. 
+
+```{r}
+most_popular_1990 <- babynames %>% 
+  group_by(name) %>% 
+  filter(year >= "1990" & year < "2000") %>% 
+  summarise(
+    number_of_people = sum(n), 
+  ) %>% 
+  arrange(desc(number_of_people))
+most_popular_1990
+```
+
+The most popular name for `boy` is `Michael`, and the most popular name for `girl` is `Jessica`. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,112 @@
+---
+title: "STAT 1261 Homework 3"
+author: "Zhuofei Xie"
+date: "9/13/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(mdsr)
+```
+
+
+# Course Taken at Pitt
+
+### **2017 Fall** 
+  * CS 0008 (Introduction to Python)
+  * MATH 0220 (Calculus I)
+  * CHEM 0110 (Fundamental Chemistry 1)
+
+### **2018 Spring**
+  * CS 0401 (Intermediate JAVA)
+  * CS 0441 (Discrete Mathematics)
+  * MATH 0230 (Calculus II)
+
+### **2018 Fall**
+  * CS 0445 (Data Structure)
+  * CS 0447 (Assembly Language)
+  * MATH 0240 (Calculus III)
+
+### **2019 Spring**
+  * CS 1501 (Algorithm Implementation)
+  * CS 0449 (Intro to System Software)
+  * MATH 1180 (Linear Algebra I)
+
+### **2019 Fall (Current Term)**
+  * MATH 1070 (Numerical Mathematics)
+  * MATH 1550 (Vector Analysis)
+  * STAT 1261 (Principle of Data Science)
+
+# My favorite Photo: 
+  ![My cute puppy](/Users/xjzayd/Desktop/WechatIMG89.jpg) 
+
+```{r message=FALSE, warning=FALSE}
+TwitterData <- read.csv("/Users/xjzayd/Desktop/university/2019\ Fall/STAT\ 1261/Homeworks/HW3/mtmv_data_10_12.csv")
+plot <- ggplot(data = TwitterData, mapping = aes (x = mshare, y = vote_share)) 
+plot <- plot + geom_point()
+plot + labs(title = "the scatter plot for vote_share & mshare")
+```
+
+```{r message=FALSE, warning=FALSE}
+plot_with_lm <- plot + geom_smooth(method = "lm", se = FALSE)
+plot_with_lm + labs(title = "the scatterplot for vote_share & mashare with linear regression line")
+```
+
+Description of the graph: 
+The graph describes the relationship between the vote_share and mshare. As can be detected from the graph, there exists a positve non-linear relationship of these two variables. The linear regression line indicates the more mshare will derive more vote_share. 
+
+# Table
+
+|Gender       |   Height1    |    Height2  |
+|-------------|--------------|-------------|
+|Males        |     173      |     125     |
+|Females      |     150      |     73      |
+|Total        |     323      |     198     |
+
+
+# Exercises D.5 D.7 D.10
+
+## Exercise D.5
+```{r echo = FALSE}
+n <- 679
+```
+The data set has n = `r n` obervations.   
+
+Explanation: 
+`echo` means display code in output document (default = TRUE). However, the author uses `echo = FALSE` in this code chunck. It means do not display code in output document. The variable `n` has been assigned `679` into. Therefore, when we call `n = r n`. It will trace the code code chunk r, and grab the value stored in variable n. Therefore, it will display `n = `r n``. 
+
+## Exercise D.7
+```{r warning = TRUE}
+sqrt(-1)
+```
+
+
+```{r warning = FALSE}
+sqrt(-1)
+```
+
+Explanation: 
+`warning` means display code warning in documentation (default = TRUE). `warning = FALSE` means do not display code warning in documentation. `sqrt(-1)` is not a valid calculation. The number places in side `sqrt()` cannot be negative. Therefore, if we want to calculate `sqrt(-1)`, it will return a NaN for us. Inside the first code chunk, it displays the warning message for us, because we set `warning = TRUE`. However, we implements `warning = FLASE` in the second code chunk. Therefore, it doesn't display any warning message. However, it doesm't influence the result of calculation. Both code chunks displys `NaN` as results of calculating. 
+
+## Exercise D.10
+```{r chunk1, eval = TRUE, include=TRUE}
+x <- 15 
+x
+```
+
+```{r chunk2}
+x <- x+3
+x 
+```
+
+```{r chunk1,eval=FALSE,include=TRUE}
+
+```
+
+`include` means include chunk in doc after running (default = TRUE). `eval` means Run code in chunk (default = TRUE). In the first code chunk (chunk1), `eval = TRUE` and `include = FALSE` mean run code chunk but do not inlude chunk in doc after running. Therefore, the variable x has been assigned with value 15. When we run the second code chunk, it grabs the value stored in x, which is 15, and adds 3 into x. Therefore, the result of x will be `18`.   
+
+If we change the chunk1 with  `eval = FALSE` and `include = TRUE`. Then we will get an error `object x not found`. The reason is code chunk1 will not run if we change `eval` from `TRUE` to `FALSE`. Therefore, if we want to run code chunk2, the value stored in x will not be found. Then it will generate an error for us.  ?
+
+
+  

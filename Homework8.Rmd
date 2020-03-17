@@ -1,0 +1,93 @@
+---
+title: "Homework8"
+author: "Zhuofei Xie"
+date: "11/1/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(mdsr)
+library(modelr)
+library(dplyr)
+```
+
+
+```{r eval=FALSE, echo=FALSE}
+grid <- RailTrail %>% 
+  data_grid(hightemp) 
+grid 
+
+grid <- grid %>% 
+  add_predictions(mod1) 
+grid
+```
+
+
+```{r eval=FALSE,  echo=FALSE}
+ggplot(data = RailTrail, aes(x = hightemp, y = volume)) + geom_point() + geom_smooth(method = lm, se = FALSE) + geom_line(aes(y = pred), data = grid, colour = "red", size = 1)
+
+mod1 <- lm(volume ~ hightemp, data = RailTrail)
+
+mod2 <- loess(volume ~ hightemp, data = RailTrail)
+```
+
+```{r eval=FALSE, echo=FALSE}
+RailTrail_r <- RailTrail %>% 
+  add_residuals(mod1) %>% 
+  dplyr::select(hightemp,volume,resid)
+RailTrail_r
+
+ggplot(data = RailTrail_r, aes(x = hightemp, y = resid)) + geom_ref_line(h = 0) + geom_point()
+```
+
+
+
+
+
+**1. Use add_predictions() to add predictions to your original dataset.**
+```{r}
+mod1 <- lm(volume ~ hightemp, data = RailTrail)
+
+mod2 <- loess(volume ~ hightemp, data = RailTrail)
+
+RailTrail_hightemp <- RailTrail %>% 
+  select(hightemp)
+
+RailTrail_hightemp_lm <- RailTrail_hightemp %>% 
+  add_predictions(mod1) 
+head(RailTrail_hightemp_lm)
+
+```
+
+**2. The power of data_grid() is in generating all combinations of potential data points. Modify the following code to create a data grid for variables hightemp, weekday, cloudcover, and precip. Check that the resulting data grid has more data points than the original dataset.**
+```{r}
+grid2 <- RailTrail %>% 
+  data_grid(hightemp,weekday,cloudcover,precip) 
+grid2
+head(grid2)
+```
+
+The original dataframe only has 90 rows. However, after we use data_grid(hightemp, weekday, couldover, orecip), we got 95040 rows data. We have more data points than the original dataset. 
+
+
+**3. Use add_predictions() and add_residuals() to visualize the nonparametric regression curve and the residuals. [Hint: The advantage of this approach is that it will work with any model in R, from the simplest to the most complex.]**
+```{r}
+RailTrail_hightemp_losses <- RailTrail_hightemp %>% 
+  add_predictions(mod2)
+head(RailTrail_hightemp_losses)
+
+ggplot(RailTrail, aes(hightemp)) + geom_point(aes(y = volume)) + geom_line(aes(y = pred), RailTrail_hightemp_losses, size = 1, color = "blue")
+```
+```{r}
+RailTrail_r_losses <- RailTrail %>% 
+  add_residuals(mod2) %>% 
+  dplyr::select(hightemp,volume, resid)
+head(RailTrail_r_losses)
+
+ggplot(RailTrail_r_losses, aes(hightemp,resid)) + geom_ref_line(h = 0) + geom_point()
+```
+
+
+
+
